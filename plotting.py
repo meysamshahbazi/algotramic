@@ -1,6 +1,6 @@
 import datetime as dt
 import plotly.graph_objects as go
-from pyparsing import line
+from plotly.subplots import make_subplots
 
 class CandlePlot:
 
@@ -15,14 +15,14 @@ class CandlePlot:
 
     def create_candle_fig(self):
         self.add_timestr()
-        self.fig = go.Figure()
+        self.fig = make_subplots(specs=[[{"secondary_y": True}]])
         if self.candles == True:
             self.fig.add_trace(go.Candlestick(
                 x=self.df_plot.sTime,
                 open=self.df_plot.open,
-                close=self.df_plot.close,
                 high=self.df_plot.high,
                 low=self.df_plot.low,
+                close=self.df_plot.close,
                 line=dict(width=1), opacity=1,
                 increasing_fillcolor='#24A06B',
                 decreasing_fillcolor="#CC2E3C",
@@ -49,7 +49,7 @@ class CandlePlot:
             font=dict(size=8, color="#e1e1e1")
         )
 
-    def add_traces(self, line_traces):
+    def add_traces(self, line_traces, is_sec=False):
         for t in line_traces:
             self.fig.add_trace(go.Scatter(
                 x=self.df_plot.sTime,
@@ -57,9 +57,10 @@ class CandlePlot:
                 line=dict(width=2),
                 line_shape="spline",
                 name=t
-            ))
+            ), secondary_y=is_sec)
 
-    def show_plot(self, width=900, height=400, nticks=5, line_traces=[]):
+    def show_plot(self, width=900, height=400, nticks=5, line_traces=[], sec_traces=[]):
         self.add_traces(line_traces)
+        self.add_traces(sec_traces, is_sec=True)
         self.update_layout(width, height, nticks)
         self.fig.show()

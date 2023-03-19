@@ -14,6 +14,7 @@ class Rates:
         from_date = datetime.now()
         # Extract n Ticks before now
         rates = mt5.copy_rates_from(self.symbol, self.timeframe, from_date, self.number_of_data)
+        mt5.shutdown() 
         # Transform Tuple into a DataFrame
         df_rates = pd.DataFrame(rates)
         # Convert number format of the date into date format
