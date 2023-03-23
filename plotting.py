@@ -59,7 +59,7 @@ class CandlePlot:
                 name=t
             ), secondary_y=is_sec)
 
-    def show_plot(self, width=900, height=400, nticks=5, line_traces=[], sec_traces=[]):
+    def show_plot(self, width=1400, height=600, nticks=5, line_traces=[], sec_traces=[]):
         self.add_traces(line_traces)
         self.add_traces(sec_traces, is_sec=True)
         self.update_layout(width, height, nticks)
