@@ -104,6 +104,59 @@ class Trade:
             elif row.high >= self.SL:
                 self.close_trade(row, self.loss_factor, row.high + self.SPREAD)   
 
+class GuruTester2:
+    def __init__(self, df_big,
+                    df_m5,
+                    SPREAD,
+                    LOSS_FACTOR = -1.0,
+                    PROFIT_FACTOR=2,
+                    use_spread=True,
+                    time_d=1 ):
+        self.df_big = df_big.copy()
+        self.SPREAD = SPREAD
+        self.LOSS_FACTOR = LOSS_FACTOR
+        self.PROFIT_FACTOR = PROFIT_FACTOR
+        self.use_spread = use_spread
+        self.df_m5 = df_m5.copy()
+        self.time_d = time_d
+
+        self.prepare_data()
+        
+    def prepare_data(self):
+        
+        print("prepare_data...")
+
+        df_m5_slim = self.df_m5[['time', 'high', 'low']].copy()
+        df_signals = create_signals2(self.df_big, time_d=self.time_d)
+
+        self.merged = pd.merge(left=df_m5_slim, right=df_signals, on='time', how='left')
+        self.merged.fillna(0, inplace=True)
+        self.merged.SIGNAL = self.merged.SIGNAL.astype(int)
+
+    def run_test(self):
+        print("run_test...")
+        open_trades_m5 = []
+        closed_trades_m5 = []
+
+        for index, row in self.merged.iterrows():
+            
+            if row.SIGNAL != NONE:
+                open_trades_m5.append(Trade(row, self.PROFIT_FACTOR, self.LOSS_FACTOR, self.SPREAD))  
+                
+            for ot in open_trades_m5:
+                ot.update(row)
+                if ot.running == False:
+                    closed_trades_m5.append(ot)
+            open_trades_m5 = [x for x in open_trades_m5 if x.running == True]
+
+        self.df_results = pd.DataFrame.from_dict([vars(x) for x in closed_trades_m5]) 
+        win_rate = (self.df_results.result==self.PROFIT_FACTOR).sum()/len(self.df_results)
+        print("Result:")
+        print("win rate: ",win_rate)
+        print(self.df_results.result.value_counts())
+        # print("Result:", self.df_results.result.sum())
+        return self.df_results
+
 class GuruTester:
     def __init__(self, df_big,
                     apply_signal, 
@@ -128,9 +181,6 @@ class GuruTester:
         
         print("prepare_data...")
 
-        # if self.use_spread == False:
-        #     remove_spread( self.df_big)
-        #     remove_spread( self.df_m5)
 
 
         apply_signals(self.df_big,
@@ -141,66 +191,6 @@ class GuruTester:
 
         df_m5_slim = self.df_m5[['time', 'high', 'low']].copy()
         df_signals = create_signals(self.df_big, time_d=self.time_d)
-
-        self.merged = pd.merge(left=df_m5_slim, right=df_signals, on='time', how='left')
-        self.merged.fillna(0, inplace=True)
-        self.merged.SIGNAL = self.merged.SIGNAL.astype(int)
-
-    def run_test(self):
-        print("run_test...")
-        open_trades_m5 = []
-        closed_trades_m5 = []
-
-        for index, row in self.merged.iterrows():
-            
-            if row.SIGNAL != NONE:
-                open_trades_m5.append(Trade(row, self.PROFIT_FACTOR, self.LOSS_FACTOR, self.SPREAD))  
-                
-            for ot in open_trades_m5:
-                ot.update(row)
-                if ot.running == False:
-                    closed_trades_m5.append(ot)
-            open_trades_m5 = [x for x in open_trades_m5 if x.running == True]
-
-        self.df_results = pd.DataFrame.from_dict([vars(x) for x in closed_trades_m5]) 
-        print("Result:", self.df_results.result.sum())
-        return self.df_results
-
-class GuruTester2:
-    def __init__(self, df_big,
-                    df_m5,
-                    SPREAD,
-                    LOSS_FACTOR = -1.0,
-                    PROFIT_FACTOR=2,
-                    use_spread=True,
-                    time_d=1 ):
-        self.df_big = df_big.copy()
-        self.SPREAD = SPREAD
-        self.LOSS_FACTOR = LOSS_FACTOR
-        self.PROFIT_FACTOR = PROFIT_FACTOR
-        self.use_spread = use_spread
-        self.df_m5 = df_m5.copy()
-        self.time_d = time_d
-
-        self.prepare_data()
-        
-    def prepare_data(self):
-        
-        print("prepare_data...")
-
-        # if self.use_spread == False:
-        #     remove_spread( self.df_big)
-        #     remove_spread( self.df_m5)
-
-
-        # apply_signals(self.df_big,
-        #             self.PROFIT_FACTOR,
-        #             self.apply_signal,
-        #             self.SPREAD)
-
-
-        df_m5_slim = self.df_m5[['time', 'high', 'low']].copy()
-        df_signals = create_signals2(self.df_big, time_d=self.time_d)
 
         self.merged = pd.merge(left=df_m5_slim, right=df_signals, on='time', how='left')
         self.merged.fillna(0, inplace=True)
