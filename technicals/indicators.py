@@ -48,7 +48,7 @@ def ATRFeature(df: pd.DataFrame, n=14):
 
 
 def KeltnerChannels(df: pd.DataFrame, n_ema=20, n_atr=10):
-    df['EMA'] = df.close.ewm(span=n_ema, min_periods=n_ema).mean()
+    df['EMA'] = df.close.ewm(span=n_ema, min_periods=n_ema,adjust=False).mean()
     df = ATR(df, n=n_atr)
     c_atr = f"ATR_{n_atr}"
     df['KeUp'] = df[c_atr] * 2 + df.EMA
@@ -84,8 +84,8 @@ def RSI(df: pd.DataFrame, n=14):
     wins = pd.Series([ x if x >= 0 else 0.0 for x in gains ], name="wins")
     losses = pd.Series([ x * -1 if x < 0 else 0.0 for x in gains ], name="losses")
 
-    wins_rma = wins.ewm(min_periods=n, alpha=alpha).mean()
-    losses_rma = losses.ewm(min_periods=n, alpha=alpha).mean()
+    wins_rma = wins.ewm(min_periods=n, alpha=alpha,adjust=False).mean()
+    losses_rma = losses.ewm(min_periods=n, alpha=alpha,adjust=False).mean()
 
     rs = wins_rma / losses_rma
 
@@ -98,8 +98,8 @@ def RSIFeature(df: pd.DataFrame, n=14):
     wins = pd.Series([ x if x >= 0 else 0.0 for x in gains ], name="wins")
     losses = pd.Series([ x * -1 if x < 0 else 0.0 for x in gains ], name="losses")
     df['Feat_gains'] = gains
-    wins_rma = wins.ewm(min_periods=n, alpha=alpha).mean()
-    losses_rma = losses.ewm(min_periods=n, alpha=alpha).mean()
+    wins_rma = wins.ewm(min_periods=n, alpha=alpha,adjust=False).mean()
+    losses_rma = losses.ewm(min_periods=n, alpha=alpha,adjust=False).mean()
     df['Feat_wins_rma'] = wins_rma
     df['Feat_losses_rma'] = losses_rma
 
@@ -111,11 +111,11 @@ def RSIFeature(df: pd.DataFrame, n=14):
 
 def MACD(df: pd.DataFrame, n_slow=26, n_fast=12, n_signal=9):
 
-    ema_long = df.close.ewm(min_periods=n_slow, span=n_slow).mean()
-    ema_short = df.close.ewm(min_periods=n_fast, span=n_fast).mean()
+    ema_long = df.close.ewm(min_periods=n_slow, span=n_slow,adjust=False).mean()
+    ema_short = df.close.ewm(min_periods=n_fast, span=n_fast,adjust=False).mean()
 
     df['MACD'] = ema_short - ema_long
-    df['SIGNAL_MACD'] = df.MACD.ewm(min_periods=n_signal, span=n_signal).mean()
+    df['SIGNAL_MACD'] = df.MACD.ewm(min_periods=n_signal, span=n_signal,adjust=False).mean()
     df['HIST'] = df.MACD - df.SIGNAL_MACD
 
     return df

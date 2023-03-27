@@ -4,3 +4,8 @@
 __pycache__/*
 technicals/__pycache__/*
 *.pickle
+*.csv
+*.txt
+.vscode/*
+
+

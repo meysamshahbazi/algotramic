@@ -14,6 +14,7 @@ class Rates:
         ticks = mt5.copy_ticks_from(self.symbol, self.from_date, 10000, mt5.COPY_TICKS_ALL)
         # Transfrom a tuple into a dataframe
         df_ticks = pd.DataFrame(ticks)
+        df_ticks.dropna(inplace=True)
         # print(df_ticks)
         # Convert number format of the date into date format
         df_ticks["time"] = pd.to_datetime(df_ticks["time"], unit="s")

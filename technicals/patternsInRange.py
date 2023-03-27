@@ -1,22 +1,22 @@
 import pandas as pd
 
-HANGING_MAN_BODY = 15.0
-HANGING_MAN_HEIGHT = 75.0
-SHOOTING_STAR_HEIGHT = 25.0
-SPINNING_TOP_MIN = 40.0
-SPINNING_TOP_MAX = 60.0
-MARUBOZU = 98.0
+HANGING_MAN_BODY = 0.15
+HANGING_MAN_HEIGHT = 0.75
+SHOOTING_STAR_HEIGHT = 0.25
+SPINNING_TOP_MIN = 0.40
+SPINNING_TOP_MAX = 0.60
+MARUBOZU_RATE = 0.98
 ENGULFING_FACTOR = 1.1
 
-MORNING_STAR_PREV2_BODY = 90.0
-MORNING_STAR_PREV_BODY = 10.0
+MORNING_STAR_PREV2_BODY = 0.90
+MORNING_STAR_PREV_BODY = 0.10
 
-TWEEZER_BODY = 0.15 # 15.0
-TWEEZER_HL = 0.01
-TWEEZER_TOP_BODY = 40.0
-TWEEZER_BOTTOM_BODY = 60.0
+TWEEZER_BODY = 0.15 
+TWEEZER_HL = 0.0001
+TWEEZER_TOP_BODY = 0.40
+TWEEZER_BOTTOM_BODY = 0.60
 
-apply_marubozu = lambda x: x.body_perc > MARUBOZU
+apply_marubozu = lambda x: x.body_perc > MARUBOZU_RATE
 
 def apply_hanging_man(row):
     if row.body_bottom_perc > HANGING_MAN_HEIGHT:
@@ -79,17 +79,17 @@ def apply_candle_props(df: pd.DataFrame):
     body_size = abs(direction)
     direction = [1 if x >= 0 else -1 for x in direction]
     full_range = df_an.high - df_an.low
-    body_perc = (body_size / full_range) * 100
+    body_perc = (body_size / full_range) 
     body_lower = df_an[['close','open']].min(axis=1)
     body_upper = df_an[['close','open']].max(axis=1)
-    body_bottom_perc = ((body_lower - df_an.low) / full_range) * 100
-    body_top_perc = ((body_upper - df_an.low) / full_range) * 100
+    body_bottom_perc = ((body_lower - df_an.low) / full_range) 
+    body_top_perc = ((body_upper - df_an.low) / full_range) 
 
     mid_point = full_range / 2 + df_an.low
 
-    low_change = df_an.low.pct_change() * 100
-    high_change = df_an.high.pct_change() * 100
-    body_size_change = body_size.pct_change() #* 100
+    low_change = df_an.low.pct_change() 
+    high_change = df_an.high.pct_change() 
+    body_size_change = body_size.pct_change() 
 
     df_an['full_range'] = full_range
     df_an['body_lower'] = body_lower
@@ -123,7 +123,7 @@ def set_candle_patterns(df_an: pd.DataFrame):
     df_an['MORNING_STAR'] = df_an.apply(apply_morning_star, axis=1)
     df_an['EVENING_STAR'] = df_an.apply(apply_morning_star, axis=1, direction=-1)
 
-def apply_patterns(df: pd.DataFrame):
+def apply_patterns_in_range(df: pd.DataFrame):
     df_an = apply_candle_props(df)
     set_candle_patterns(df_an)
     return df_an
