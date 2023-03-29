@@ -192,7 +192,87 @@ def MACDFeature(df: pd.DataFrame, n_slow=26, n_fast=12, n_signal=9):
     return df
 
 
+def BREAKOUT(df):
+    df['pivots_l'] = False
+    df['pivots_h'] = False
 
+    df['low_perv'] = df.low.shift(1)
+    df['high_perv'] = df.high.shift(1)
+    df['low_next'] = df.low.shift(-1)
+    df['high_next'] = df.high.shift(-1)
+    df.pivots_l = (df.low_perv > df.low) & (df.low_next > df.low)
+    df.pivots_h = (df.high_perv < df.high) & (df.high_next < df.high)
+    df['last_pivot_h'] = 0
+    df['last_pivot_l'] = 0
+    last_pivot_l = df.low.iloc[0]
+    last_pivot_h = df.high.iloc[0]
+
+    for i in range(len(df)):
+        if df.pivots_h.iloc[i]:
+            last_pivot_h = df.high.iloc[i]
+        if df.pivots_l.iloc[i]:
+            last_pivot_l = df.low.iloc[i]
+        df['last_pivot_h'].iloc[i] = last_pivot_h
+        df['last_pivot_l'].iloc[i] = last_pivot_l
+
+    df['close_perv'] = df.close.shift(1)
+
+    df['BREAK_UP'] = (df.close_perv < df.last_pivot_h) & (df.close >  df.last_pivot_h)
+    df['BREAK_DOWN'] = (df.close_perv > df.last_pivot_l) & (df.close <  df.last_pivot_l)
+
+    df.pivots_l = df.pivots_l.astype(float)
+    df.pivots_h = df.pivots_h.astype(float)
+
+    df.BREAK_UP = df.BREAK_UP.astype(float)
+    df.BREAK_DOWN = df.BREAK_DOWN.astype(float)
+
+    return df
+
+def ichimoku(df):
+    df['Tenkan_sen'] = (df.high.rolling(window=9).max() + df.low.rolling(window=9).min())/2
+    df['Kijun_sen'] = (df.high.rolling(window=26).max() + df.low.rolling(window=26).min())/2
+    df['Senkou_Span_A'] = (df['Tenkan_sen'] + df['Kijun_sen'])/2
+    df.Senkou_Span_A = df.Senkou_Span_A.shift(+26) 
+    df['Senkou_Span_B'] = (df.high.rolling(window=52).max() + df.low.rolling(window=52).min())/2
+    df.Senkou_Span_B = df.Senkou_Span_B.shift(+26) 
+    df.fillna(0)
+    return df
+
+def ichimokuNonLinear(df):
+    df['Tenkan_sen'] = (df.high.rolling(window=9).max() + df.low.rolling(window=9).min())/2
+    df['Kijun_sen'] = (df.high.rolling(window=26).max() + df.low.rolling(window=26).min())/2
+    df['Senkou_Span_A'] = (df['Tenkan_sen'] + df['Kijun_sen'])/2
+    df.Senkou_Span_A = df.Senkou_Span_A.shift(+26) 
+    df['Senkou_Span_B'] = (df.high.rolling(window=52).max() + df.low.rolling(window=52).min())/2
+    df.Senkou_Span_B = df.Senkou_Span_B.shift(+26) 
+
+
+    df['Tenkan_sen_touch'] = 0
+    df.loc[df.low > df.Tenkan_sen , 'Tenkan_sen_touch'] = 1
+    df.loc[df.high < df.Tenkan_sen , 'Tenkan_sen_touch'] = -1
+
+    df['Kijun_sen_touch'] = 0
+    df.loc[df.low > df.Kijun_sen , 'Kijun_sen_touch'] = 1
+    df.loc[df.high < df.Kijun_sen , 'Kijun_sen_touch'] = -1
+
+    df['Senkou_Span_A_touch'] = 0
+    df.loc[df.low > df.Senkou_Span_A , 'Senkou_Span_A_touch'] = 1
+    df.loc[df.high < df.Senkou_Span_A , 'Senkou_Span_A_touch'] = -1
+
+    df['Senkou_Span_B_touch'] = 0
+    df.loc[df.low > df.Senkou_Span_B , 'Senkou_Span_B_touch'] = 1
+    df.loc[df.high < df.Senkou_Span_B , 'Senkou_Span_B_touch'] = -1
+
+    df['Ten_kij_cross'] = 0
+    df.loc[df.Tenkan_sen > df.Kijun_sen , 'Ten_kij_cross'] = 1
+    df.loc[df.Tenkan_sen < df.Kijun_sen , 'Ten_kij_cross'] = -1
+    
+    df['Cloud_cross'] = 0
+    df.loc[df.Senkou_Span_A > df.Senkou_Span_B , 'Cloud_cross'] = 1
+    df.loc[df.Senkou_Span_A < df.Senkou_Span_B , 'Cloud_cross'] = -1
+    
+    df.fillna(0)
+    return df
 
 
 
