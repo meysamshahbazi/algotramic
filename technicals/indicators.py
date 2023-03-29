@@ -8,6 +8,21 @@ def BollingerBands(df: pd.DataFrame, n=20, s=2):
     df['BB_LW'] = df['BB_MA'] - stddev * s
     return df
 
+def BollingerBandsNonLinear(df: pd.DataFrame, n=20, s=2):
+    typical_p = ( df.close + df.high + df.low ) / 3
+    stddev = typical_p.rolling(window=n).std()
+    BB_MA = typical_p.rolling(window=n).mean()
+    BB_UP = BB_MA + stddev * s
+    BB_LW = BB_MA - stddev * s
+    df['BB_MA_cross'] = 0
+    df['BB_UP_touch'] = 0
+    df['BB_LW_touch'] = 0
+    df.loc[df.low > BB_MA , 'BB_MA_cross'] = 1
+    df.loc[df.high < BB_MA , 'BB_MA_cross'] = -1
+    df.loc[df.high > BB_UP , 'BB_UP_touch'] = 1
+    df.loc[df.low < BB_LW , 'BB_LW_touch'] = 1
+    return df
+
 def BollingerBandsFeature(df: pd.DataFrame, n=20, s=2):
     df = BollingerBands(df,n,s)
     df['Feat_BB_MA_c'] = df.BB_MA-df.close
@@ -54,7 +69,25 @@ def KeltnerChannels(df: pd.DataFrame, n_ema=20, n_atr=10):
     df['KeUp'] = df[c_atr] * 2 + df.EMA
     df['KeLo'] = df.EMA - df[c_atr] * 2
     df.drop(c_atr, axis=1, inplace=True)
+    
     return df
+
+def KeltnerChannelsNonLinear(df: pd.DataFrame, n_ema=20, n_atr=10):
+    EMA = df.close.ewm(span=n_ema, min_periods=n_ema,adjust=False).mean()
+    df = ATR(df, n=n_atr)
+    c_atr = f"ATR_{n_atr}"
+    KeUp = df[c_atr] * 2 + EMA
+    KeLo = EMA - df[c_atr] * 2
+    df.drop(c_atr, axis=1, inplace=True)
+    df['EMA_cross'] = 0
+    df['KeUp_touch'] = 0
+    df['KeLo_touch'] = 0
+    df.loc[df.low > EMA , 'EMA_cross'] = 1
+    df.loc[df.high < EMA , 'EMA_cross'] = -1
+    df.loc[df.high > KeUp , 'KeUp_touch'] = 1
+    df.loc[df.low < KeLo , 'KeLo_touch'] = 1
+    return df
+
 
 def KeltnerChannelsFeature(df: pd.DataFrame, n_ema=20, n_atr=10):
     df = KeltnerChannels(df,n_ema,n_atr)
@@ -92,6 +125,25 @@ def RSI(df: pd.DataFrame, n=14):
     df[f"RSI_{n}"] = 100.0 - (100.0 / (1.0 + rs))
     return df
 
+def RSINonLinear(df: pd.DataFrame, n=14):
+    alpha = 1.0 / n
+    gains = df.close.diff()
+
+    wins = pd.Series([ x if x >= 0 else 0.0 for x in gains ], name="wins")
+    losses = pd.Series([ x * -1 if x < 0 else 0.0 for x in gains ], name="losses")
+
+    wins_rma = wins.ewm(min_periods=n, alpha=alpha,adjust=False).mean()
+    losses_rma = losses.ewm(min_periods=n, alpha=alpha,adjust=False).mean()
+
+    rs = wins_rma / losses_rma
+
+    RSI = 100.0 - (100.0 / (1.0 + rs))
+    df['RSI_level'] = 0
+    df.loc[RSI > 70 , 'RSI_level'] = 1
+    df.loc[RSI < 30 , 'RSI_level'] = -1
+    return df
+
+
 def RSIFeature(df: pd.DataFrame, n=14):
     alpha = 1.0 / n
     gains = df.close.diff()
@@ -120,6 +172,18 @@ def MACD(df: pd.DataFrame, n_slow=26, n_fast=12, n_signal=9):
 
     return df
 
+def MACDNonLinear(df: pd.DataFrame, n_slow=26, n_fast=12, n_signal=9):
+
+    ema_long = df.close.ewm(min_periods=n_slow, span=n_slow,adjust=False).mean()
+    ema_short = df.close.ewm(min_periods=n_fast, span=n_fast,adjust=False).mean()
+
+    MACD = ema_short - ema_long
+    SIGNAL_MACD = MACD.ewm(min_periods=n_signal, span=n_signal,adjust=False).mean()
+    HIST = MACD - SIGNAL_MACD
+    df['MACDHIST_level'] = 0
+    df.loc[HIST > 0 , 'MACDHIST_level'] = 1
+    df.loc[HIST < 0 , 'MACDHIST_level'] = -1
+    return df
 def MACDFeature(df: pd.DataFrame, n_slow=26, n_fast=12, n_signal=9):
     df = MACD(df,n_slow,n_fast,n_signal)
     df['Feat_MACD']  = df['MACD'] 
