@@ -104,6 +104,62 @@ class Trade:
             elif row.high >= self.SL:
                 self.close_trade(row, self.loss_factor, row.high + self.SPREAD)   
 
+
+
+class Trade_Trailing:
+    def __init__(self, row, profit_factor, loss_factor, SPREAD):
+        self.running = True
+        self.start_index_m5 = row.name
+        self.profit_factor = profit_factor
+        self.loss_factor = loss_factor
+        self.SPREAD = SPREAD
+        
+        if row.SIGNAL == BUY:
+            self.start_price = row.start_price + self.SPREAD
+            self.trigger_price = row.start_price + self.SPREAD
+            self.margin =  self.start_price - row.SL
+            
+        if row.SIGNAL == SELL:
+            self.start_price = row.start_price
+            self.trigger_price = row.start_price
+            self.margin =  -self.start_price + row.SL
+            
+        self.SIGNAL = row.SIGNAL
+        self.TP = row.TP
+        self.SL = row.SL
+        
+        self.result = 0.0
+        self.end_time = row.time
+        self.start_time = row.time
+        
+    def close_trade(self, row, result, trigger_price):
+        self.running = False
+        # self.result = result
+        self.end_time = row.time
+        self.trigger_price = trigger_price
+        
+    def update(self, row):
+        if self.SIGNAL == BUY:
+            if row.high >= self.TP:
+                self.TP += self.margin
+                self.SL += self.margin
+                self.result += 1
+                # self.close_trade(row, self.profit_factor, row.high)
+            elif row.low <= self.SL:
+                self.result -= 1
+                self.close_trade(row, self.loss_factor, row.low)
+        if self.SIGNAL == SELL:
+            if row.low <= self.TP:
+                self.TP -= self.margin
+                self.SL -= self.margin
+                self.result += 1
+                # self.close_trade(row, self.profit_factor, row.low + self.SPREAD)
+            elif row.high >= self.SL:
+                self.result -= 1
+                self.close_trade(row, self.loss_factor, row.high + self.SPREAD)   
+
+
+
 class GuruTester2:
     def __init__(self, df_big,
                     df_m5,
@@ -141,7 +197,7 @@ class GuruTester2:
         for index, row in self.merged.iterrows():
             
             if row.SIGNAL != NONE:
-                open_trades_m5.append(Trade(row, self.PROFIT_FACTOR, self.LOSS_FACTOR, self.SPREAD))  
+                open_trades_m5.append(Trade_Trailing(row, self.PROFIT_FACTOR, self.LOSS_FACTOR, self.SPREAD))  
                 
             for ot in open_trades_m5:
                 ot.update(row)
@@ -150,7 +206,7 @@ class GuruTester2:
             open_trades_m5 = [x for x in open_trades_m5 if x.running == True]
 
         self.df_results = pd.DataFrame.from_dict([vars(x) for x in closed_trades_m5]) 
-        win_rate = (self.df_results.result==self.PROFIT_FACTOR).sum()/len(self.df_results)
+        win_rate = (self.df_results.result > 0 ).sum()/len(self.df_results)
         print("Result:")
         print("win rate: ",win_rate)
         print(self.df_results.result.value_counts())
