@@ -212,8 +212,9 @@ def BREAKOUT(df):
             last_pivot_h = df.high.iloc[i]
         if df.pivots_l.iloc[i]:
             last_pivot_l = df.low.iloc[i]
-        df['last_pivot_h'].iloc[i] = last_pivot_h
-        df['last_pivot_l'].iloc[i] = last_pivot_l
+        if i+1 < len(df):
+            df['last_pivot_h'].iloc[i+1] = last_pivot_h
+            df['last_pivot_l'].iloc[i+1] = last_pivot_l
 
     df['close_perv'] = df.close.shift(1)
 
